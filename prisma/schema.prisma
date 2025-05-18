@@ -1,0 +1,52 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Project {
+  id          String    @id @default(uuid())
+  name        String
+  description String?   @db.Text
+  startDate   DateTime? @map("start_date")
+  tasks       Task[]
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  @@map("projects")
+}
+
+model Task {
+  id           String               @id @default(uuid())
+  name         String
+  description  String?              @db.Text
+  duration     Int
+  project      Project              @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId    String               @map("project_id")
+  createdAt    DateTime             @default(now()) @map("created_at")
+  updatedAt    DateTime             @updatedAt @map("updated_at")
+  // Self-relations for dependencies
+  dependencies TaskDependency[]     @relation("DependentTask")
+  dependents   TaskDependency[]     @relation("Predecessor")
+
+  @@map("tasks")
+}
+
+model TaskDependency {
+  id            String @id @default(uuid())
+  // The task that depends on another task
+  dependent     Task   @relation("DependentTask", fields: [dependentId], references: [id], onDelete: Cascade)
+  dependentId   String @map("dependent_id")
+  // The prerequisite task that must be completed before the dependent task
+  predecessor   Task   @relation("Predecessor", fields: [predecessorId], references: [id], onDelete: Cascade)
+  predecessorId String @map("predecessor_id")
+
+  @@unique([dependentId, predecessorId])
+  @@map("task_dependencies")
+}
