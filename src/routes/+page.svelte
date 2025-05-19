@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import type { Project, Task, CPMResults } from '$lib/types/project';
   import { calculateCPM } from '$lib/utils/cpm';
+  import CPMGraph from '$lib/components/CPMGraph.svelte';
   
   let project: Project = {
     id: 'new',
@@ -243,6 +244,12 @@
             {/each}
           </tbody>
         </table>
+        
+        <CPMGraph 
+          tasks={project.tasks}
+          cpmResults={cpmResults.results}
+          criticalPath={cpmResults.criticalPath}
+        />
       </div>
     {/if}
   </div>
@@ -250,7 +257,7 @@
 
 <style>
   main {
-    max-width: 1200px;
+    max-width: 1400px;
     margin: 0 auto;
     padding: 1rem;
   }

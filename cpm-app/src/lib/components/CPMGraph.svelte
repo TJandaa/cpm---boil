@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount, onDestroy, afterUpdate } from 'svelte';
   import { Task, CPMResult, ProjectCPMResults } from '$lib/types/project';
+  import * as d3Import from 'd3';
 
   export let tasks: Task[] = [];
   export let cpmResults: ProjectCPMResults | null = null;
@@ -16,7 +17,7 @@
   
   // D3 modules are loaded dynamically in onMount
   let d3: any;
-
+  
   // Graph data
   type GraphNode = {
     id: string;
@@ -125,7 +126,7 @@
     svg.append('defs').append('marker')
       .attr('id', 'arrowhead')
       .attr('viewBox', '-0 -5 10 10')
-      .attr('refX', 20)
+      .attr('refX', 30)
       .attr('refY', 0)
       .attr('orient', 'auto')
       .attr('markerWidth', 6)
@@ -138,7 +139,7 @@
     svg.select('defs').append('marker')
       .attr('id', 'arrowhead-critical')
       .attr('viewBox', '-0 -5 10 10')
-      .attr('refX', 20)
+      .attr('refX', 30)
       .attr('refY', 0)
       .attr('orient', 'auto')
       .attr('markerWidth', 6)
@@ -172,20 +173,28 @@
         .on('end', dragEnded)
       );
     
-    // Node circles
+    // Node circles (slightly larger for more info)
     node.append('circle')
-      .attr('r', 20)
+      .attr('r', 30)
       .attr('fill', d => d.criticalPath ? '#fff3cd' : '#e9ecef')
       .attr('stroke', d => d.criticalPath ? '#dc3545' : '#6c757d')
       .attr('stroke-width', d => d.criticalPath ? 2 : 1);
     
-    // Node labels
+    // Node labels (task name)
     node.append('text')
-      .attr('dy', 4)
+      .attr('dy', -5)
       .attr('text-anchor', 'middle')
       .text(d => d.label.substring(0, 10))
       .style('font-size', '10px')
       .style('font-weight', d => d.criticalPath ? 'bold' : 'normal');
+    
+    // Node duration
+    node.append('text')
+      .attr('dy', 8)
+      .attr('text-anchor', 'middle')
+      .text(d => `${d.duration}d`)
+      .style('font-size', '9px')
+      .style('fill', '#666');
     
     // Task details as tooltip on hover
     node.append('title')
@@ -199,10 +208,10 @@
     
     // Force directed simulation
     simulation = d3.forceSimulation(nodes)
-      .force('link', d3.forceLink(links).id((d: any) => d.id).distance(100))
+      .force('link', d3.forceLink(links).id((d: any) => d.id).distance(120))
       .force('charge', d3.forceManyBody().strength(-500))
       .force('center', d3.forceCenter(width / 2, height / 2))
-      .force('collide', d3.forceCollide().radius(40));
+      .force('collide', d3.forceCollide().radius(50));
     
     // Update positions on each tick
     simulation.on('tick', () => {
@@ -298,20 +307,13 @@
     resetZoom();
   }
 
-  // Load D3.js dynamically
-  async function loadD3() {
-    if (!d3) {
-      const module = await import('https://cdn.jsdelivr.net/npm/d3@7/+esm');
-      d3 = module;
-      renderGraph();
-    }
-  }
-
+  // Initialize D3
   onMount(async () => {
     try {
-      await loadD3();
+      d3 = d3Import;
+      renderGraph();
     } catch (error) {
-      console.error('Failed to load D3.js:', error);
+      console.error('Failed to initialize D3.js:', error);
     }
   });
 
@@ -395,6 +397,7 @@
     border: 1px solid #e9ecef;
     border-radius: 6px;
     overflow: hidden;
+    background-color: #fafafa;
   }
   
   .empty-graph {
